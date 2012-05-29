@@ -66,7 +66,7 @@ public class UOLDriver {
 	private Logger log;
 	private Random randomizer;
 	private String url, rootUrl, loginUrl, homeUrl, historicoUrl, extratoUrl;
-	ContentSizeStats contentStats = null;
+	private ContentSizeStats contentStats = null;
 	private String[] matriculas;
 
 	public UOLDriver() throws XPathExpressionException, ConfigurationException, IOException {
