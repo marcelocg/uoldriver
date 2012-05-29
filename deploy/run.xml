@@ -47,6 +47,10 @@
                     <name>extratoPath</name>
                     <value>/oul/Acesso.do?objetoCodigo=23315</value>
                 </property>
+                <property>
+                    <name>matriculas</name>
+                    <value>731003503,731007538,731007959,731008189,731011332,731011449,731011746,731012686,731013460,731013486,731013700,731023428,1020370,1020381,1020382,1020386,1020393,1020396,1020401,1020414,1020438,1020440</value>
+                </property>
             </properties>
         </driverConfig>
     </fa:runConfig>

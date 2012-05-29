@@ -32,6 +32,7 @@ import com.sun.faban.driver.util.ContentSizeStats;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,10 +64,29 @@ public class UOLDriver {
 	private DriverContext ctx;
 	private HttpTransport http;
 	private Logger log;
+	private Random randomizer;
 	private String url, rootUrl, loginUrl, homeUrl, historicoUrl, extratoUrl;
 	ContentSizeStats contentStats = null;
+	private String[] matriculas;
 
-	public UOLDriver() throws XPathExpressionException, ConfigurationException {
+	public UOLDriver() throws XPathExpressionException, ConfigurationException, IOException {
+
+		setup();
+
+		configureURLs();
+
+		contentStats = new ContentSizeStats(ctx.getOperationCount());
+		ctx.attachMetrics(contentStats);
+		
+		try {
+			init();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			throw new ConfigurationException(e);
+		}
+	}
+
+	private void setup() throws XPathExpressionException, ConfigurationException, IOException {
 		ctx = DriverContext.getContext();
 		log = ctx.getLogger();
 		HttpTransport
@@ -81,7 +101,6 @@ public class UOLDriver {
 			urlBuilder.append("http://");
 
 		s = ctx.getXPathValue("/UOL/webServer/fa:hostConfig/fa:hostPorts");
-		log.log(Level.INFO, "HostPorts capturado do XML: " + s);
 		List<NameValuePair<Integer>> hostPorts = Utilities.parseHostPorts(s);
 		// We currently only support a single host/port with this workload
 		if (hostPorts.size() != 1)
@@ -97,61 +116,52 @@ public class UOLDriver {
 
 		url = urlBuilder.toString();
 
-		s = ctx.getProperty("rootPath");
-		if (s.charAt(0) == '/')
-			rootUrl = url + s;
-		else
-			rootUrl = url + '/' + s;
+		String response = http.fetchURL(url).toString();
+
+		url = response.substring(response.indexOf("<frame name=\"main\" src=\"") + 24, response.indexOf("<noframes>") - 10);
+		url = url.substring(0, url.indexOf("/oul/inicio.jsp"));
+
+	}
+
+	private String getURL(String URLName){
+		String s = ctx.getProperty(URLName);
+		return url + ( (s.charAt(0) == '/') ? "" : "/" ) + s;
+	}
+
+	private void configureURLs(){
 		
-		s = ctx.getProperty("homePath");
-		if (s.charAt(0) == '/')
-			homeUrl = url + s;
-		else
-			homeUrl = url + '/' + s;
+		rootUrl 	 = getURL("rootPath");
+		homeUrl 	 = getURL("homePath");
+		historicoUrl = getURL("historicoPath");
+		extratoUrl   = getURL("extratoPath");
 
-		s = ctx.getProperty("historicoPath");
-		if (s.charAt(0) == '/')
-			historicoUrl = url + s;
-		else
-			historicoUrl = url + '/' + s;
-
-		s = ctx.getProperty("extratoPath");
-		if (s.charAt(0) == '/')
-			extratoUrl = url + s;
-		else
-			extratoUrl = url + '/' + s;
-
-		contentStats = new ContentSizeStats(ctx.getOperationCount());
-		ctx.attachMetrics(contentStats);
-		
-		try {
-			init();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			throw new ConfigurationException(e);
-		}
 	}
 
 	public void init() throws IOException {
+		matriculas = ctx.getProperty("matriculas").split(",");
+		
+		randomizer = new Random();
+		String matricula = matriculas[randomizer.nextInt(matriculas.length)];
+
 		String response = http.fetchURL(rootUrl).toString();
 		log.log(Level.INFO, response);
-		doLogin();
+		doLogin(matricula);
 	}
 	
-	private String constructLoginPost() {
+	private String constructLoginPost(String matricula) {
         StringBuilder postString = new StringBuilder();
         
-        postString.append("matricula=").append("1020440");
+        postString.append("matricula=").append(matricula);
         postString.append("&senha=").append("11111111");
         
         return postString.toString();
     }
 	
-	public void doLogin() throws IOException {
+	public void doLogin(String matricula) throws IOException {
 		
 		log.log(Level.INFO, "Efetuando login...");
 		
-		String loginPost = constructLoginPost();
+		String loginPost = constructLoginPost(matricula);
 		String loginAction = url + "/oul/LogonSubmit.do?method=logon";
 		StringBuilder response = http.fetchURL(loginAction, loginPost);
 		log.log(Level.INFO, "[LOGIN] Response Code:" + http.getResponseCode());
