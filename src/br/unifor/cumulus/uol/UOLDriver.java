@@ -78,12 +78,7 @@ public class UOLDriver {
 		contentStats = new ContentSizeStats(ctx.getOperationCount());
 		ctx.attachMetrics(contentStats);
 		
-		try {
-			init();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			throw new ConfigurationException(e);
-		}
+		init();
 	}
 
 	private void setup() throws XPathExpressionException, ConfigurationException, IOException {
