@@ -1,6 +1,10 @@
 <project name="Basic Web Workload" default="deploy.jar" basedir=".">
 
     <property file="build.properties"/>
+    <property environment="env"/>
+    <property name="user" value="${env.USER}"/>
+    <property name="home" value="/home/${user}" />
+    <property name="faban.home" value="/home/${user}/${faban.folder}" />
     <property name="src.dir" value="src"/>
     <property name="build.dir" value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
