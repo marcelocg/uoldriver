@@ -11,7 +11,7 @@
         <fh:description>Write the run description here.</fh:description>
         <!-- The hostConfig section is used by the harness to control hosts -->
         <fa:hostConfig>
-            <fa:host>10.252.79.39</fa:host>
+            <fa:host>10.252.11.245</fa:host>
             <fh:tools></fh:tools>
         </fa:hostConfig>
         <!-- The scale of the benchmark run, the driver definition
@@ -37,7 +37,7 @@
                 </property>
                 <property>
                     <name>historicoPath</name>
-                    <value>/oul/Acesso.do?objetoCodigo=23396</value>
+                    <value>/oul/Acesso.do?method=parse&amp;objetoCodigo=23396</value>
                 </property>
                 <property>
                     <name>enderecoPath</name>

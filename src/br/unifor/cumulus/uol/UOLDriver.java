@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 				 responseTimeUnit = TimeUnit.MILLISECONDS
 )
 @FixedTime( cycleType = CycleType.THINKTIME, 
-			cycleTime = 5, 
+			cycleTime = 2000, 
 			cycleDeviation = 20
 )
 //@MatrixMix(operations = { "Home", "Historico", "Extrato" }, 
@@ -56,7 +56,7 @@ import java.util.logging.Logger;
 //				   @Row({ 	20, 	39, 		41 }), //Historico
 //				   @Row({ 	60, 	19, 		21 }) }//Extrato
 //)
-@MatrixMix(operations = { "Historico" }, 
+@MatrixMix(operations = { "Endereco" }, 
 mix = { @Row({ 	100  }) }
 )
 public class UOLDriver {
@@ -65,7 +65,7 @@ public class UOLDriver {
 	private HttpTransport http;
 	private Logger log;
 	private Random randomizer;
-	private String url, rootUrl, loginUrl, homeUrl, historicoUrl, extratoUrl;
+	private String url, rootUrl, loginUrl, homeUrl, historicoUrl, extratoUrl, enderecoUrl;
 	private ContentSizeStats contentStats = null;
 	private String[] matriculas;
 
@@ -111,11 +111,12 @@ public class UOLDriver {
 
 		url = urlBuilder.toString();
 
-		String response = http.fetchURL(url).toString();
+//		String response = http.fetchURL(url).toString();
+//
+//		url = response.substring(response.indexOf("<frame name=\"main\" src=\"") + 24, response.indexOf("<noframes>") - 9);
+//		url = url.substring(0, url.indexOf("/oul/inicio.jsp"));
 
-		url = response.substring(response.indexOf("<frame name=\"main\" src=\"") + 24, response.indexOf("<noframes>") - 10);
-		url = url.substring(0, url.indexOf("/oul/inicio.jsp"));
-
+		
 	}
 
 	private String getURL(String URLName){
@@ -129,7 +130,8 @@ public class UOLDriver {
 		homeUrl 	 = getURL("homePath");
 		historicoUrl = getURL("historicoPath");
 		extratoUrl   = getURL("extratoPath");
-
+		enderecoUrl  = getURL("enderecoPath");
+		log.log(Level.INFO, "URL Endereco: " + enderecoUrl);
 	}
 
 	public void init() throws IOException {
@@ -138,8 +140,8 @@ public class UOLDriver {
 		randomizer = new Random();
 		String matricula = matriculas[randomizer.nextInt(matriculas.length)];
 
-		String response = http.fetchURL(rootUrl).toString();
-		log.log(Level.INFO, response);
+//		String response = http.fetchURL(rootUrl).toString();
+		log.log(Level.INFO, "Matricula: " + matricula);
 		doLogin(matricula);
 	}
 	
@@ -159,8 +161,7 @@ public class UOLDriver {
 		String loginPost = constructLoginPost(matricula);
 		String loginAction = url + "/oul/LogonSubmit.do?method=logon";
 		StringBuilder response = http.fetchURL(loginAction, loginPost);
-		log.log(Level.INFO, "[LOGIN] Response Code:" + http.getResponseCode());
-		
+		// log.log(Level.INFO, "[LOGIN] Response Code:" + http.getResponseCode());
 		// log.log(Level.INFO, response.toString());
 		
 	}
@@ -175,13 +176,12 @@ public class UOLDriver {
 	}
 
 	@BenchmarkOperation(name = "Historico", 
-						max90th = 250, // 250 millisec
+						max90th = 150, // millisec
 						timing = Timing.AUTO)
 	public void doHistoricoPage() throws IOException {
 		
 		StringBuilder response = http.fetchURL(historicoUrl);
-		log.log(Level.INFO, response.toString());
-		
+				
 		if (ctx.isTxSteadyState())
 			contentStats.sumContentSize[ctx.getOperationId()] += response.length();
 	}
@@ -194,4 +194,21 @@ public class UOLDriver {
 		if (ctx.isTxSteadyState())
 			contentStats.sumContentSize[ctx.getOperationId()] += size;
 	}
+
+	@BenchmarkOperation(name = "Endereco", 
+						max90th = 500, // millisec
+						timing = Timing.AUTO)
+	public void doEnderecoPage() throws IOException {
+
+		StringBuilder response = http.fetchURL(enderecoUrl);
+
+		if(response.indexOf("Washington") > 0){
+			log.log(Level.INFO, "Página de Endereço consultada OK!");
+		}
+		
+		if (ctx.isTxSteadyState())
+			contentStats.sumContentSize[ctx.getOperationId()] += response
+					.length();
+	}
+
 }
