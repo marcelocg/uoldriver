@@ -31,6 +31,7 @@ import com.sun.faban.driver.util.ContentSizeStats;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
+import java.net.ResponseCache;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -153,7 +154,7 @@ public class UOLDriver {
         
         return postString.toString();
     }
-	
+
 	public void doLogin(String matricula) throws IOException {
 		
 		log.log(Level.INFO, "Efetuando login...");
@@ -195,15 +196,51 @@ public class UOLDriver {
 			contentStats.sumContentSize[ctx.getOperationId()] += size;
 	}
 
+	private String constructEnderecoPost() {
+//        StringBuilder postString = new StringBuilder();
+//        
+//        postString.append("tipo=").append("R");
+//        postString.append("&rua=").append("Av.+Washington+Soares");
+//        postString.append("&endereco=").append("1321");
+//        postString.append("&ponto=").append("TESTE+PROJETO+CUMULUS");
+//        postString.append("&bairro=").append("Edson+Queiroz");
+//        postString.append("&cidade=").append("Fortaleza");
+//        postString.append("&uf=").append("CE");
+//        postString.append("&cep=").append("60135420");
+//        postString.append("&dddcelular=").append("85");
+//        postString.append("&telefonecelular=").append("12345678");
+//        
+//        return postString.toString();
+		
+//		return "tipo=R&rua=Av.+Washington+Soares%2C+1321&endereco=1321&complemento=APTO.+611+BL-B&ponto=CUMULUS&bairro=Edson+Queiroz&cidade=FORTALEZA&uf=CE&cep=60841455&dddcelular=85&telefonecelular=96420397&ddd=85&telefone=32551610&dddcomercial=&telefonecomercial=&dddemergencia=&telefoneemergencia=&contatoemergencia=&dddfax=&telefonefax=&emailunifor=jglauberfaengamb%40edu.unifor.br&email=";
+		return "tipo=R&rua=Av. Washington Soares, 1321&endereco=1321&complemento=APTO. 611 BL-B&ponto=CUMULUS&bairro=Edson Queiroz&cidade=FORTALEZA&uf=CE&cep=60841455&dddcelular=85&telefonecelular=96420397&ddd=85&telefone=32551610&dddcomercial=&telefonecomercial=&dddemergencia=&telefoneemergencia=&contatoemergencia=&dddfax=&telefonefax=&emailunifor=jglauberfaengamb@edu.unifor.br&email=";
+    }
+	
+
 	@BenchmarkOperation(name = "Endereco", 
-						max90th = 500, // millisec
+						max90th = 1000, // millisec
 						timing = Timing.AUTO)
 	public void doEnderecoPage() throws IOException {
 
 		StringBuilder response = http.fetchURL(enderecoUrl);
 
-		if(response.indexOf("Washington") > 0){
-			log.log(Level.INFO, "Página de Endereço consultada OK!");
+		if (ctx.isTxSteadyState())
+			contentStats.sumContentSize[ctx.getOperationId()] += response
+					.length();
+
+		int responseCode = http.getResponseCode();
+		
+		if(responseCode == 200){
+
+			String enderecoPost = constructEnderecoPost();
+			String enderecoAction = url + "/oul/EnderecoSubmit.do?method=processar";
+			response = http.fetchURL(enderecoAction, enderecoPost);
+			
+			responseCode = http.getResponseCode();
+			log.log(Level.INFO, "[Endereco] Codigo de resposta alteracao: " + responseCode);
+			if(responseCode == 200){
+				log.log(Level.INFO, "Dados de Endereço alterados!");
+			}
 		}
 		
 		if (ctx.isTxSteadyState())

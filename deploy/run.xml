@@ -56,7 +56,7 @@
     </fa:runConfig>
     <webServer>
         <fa:hostConfig xmlns="http://faban.sunsource.net/ns/fabanharness" xmlns:fa="http://faban.sunsource.net/ns/faban">
-            <fa:hostPorts>ec2-23-22-87-11.compute-1.amazonaws.com:8080</fa:hostPorts>
+            <fa:hostPorts>ec2-23-22-96-129.compute-1.amazonaws.com:8080</fa:hostPorts>
             <enabled>false</enabled>
             <tools>NONE</tools>
         </fa:hostConfig>
