@@ -196,9 +196,10 @@ public class UOLDriver {
 						max90th = 400, // 250 millisec
 						timing = Timing.AUTO)
 	public void doExtratoPage() throws IOException {
-		int size = http.readURL(extratoUrl);
+		StringBuilder response = http.fetchURL(extratoUrl);
+		log.log(Level.INFO, "[Extrato] Extrato consultado");
 		if (ctx.isTxSteadyState())
-			contentStats.sumContentSize[ctx.getOperationId()] += size;
+			contentStats.sumContentSize[ctx.getOperationId()] += response.length();
 	}
 
 	private String constructEnderecoPost() {
