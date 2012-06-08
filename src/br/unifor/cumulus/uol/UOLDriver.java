@@ -57,8 +57,12 @@ import java.util.logging.Logger;
 //				   @Row({ 	20, 	39, 		41 }), //Historico
 //				   @Row({ 	60, 	19, 		21 }) }//Extrato
 //)
-@MatrixMix(operations = { "Endereco" }, 
-mix = { @Row({ 	100  }) }
+@MatrixMix(operations = { "Home", "Historico", "Endereco", "Extrato", "AlterarSenha"  }, 
+mix = { @Row({ 	0, 40, 15, 40,  5  }),
+		@Row({ 15,  0, 20, 60,  5  }),
+		@Row({ 10, 30,  0, 55,  5  }),
+		@Row({ 30, 35, 30,  0,  5  }),
+		@Row({ 40, 30, 10, 20,  0  }) }
 )
 public class UOLDriver {
 
@@ -66,7 +70,7 @@ public class UOLDriver {
 	private HttpTransport http;
 	private Logger log;
 	private Random randomizer;
-	private String url, rootUrl, loginUrl, homeUrl, historicoUrl, extratoUrl, enderecoUrl;
+	private String url, rootUrl, loginUrl, homeUrl, historicoUrl, extratoUrl, enderecoUrl, alterarSenhaUrl;
 	private ContentSizeStats contentStats = null;
 	private String[] matriculas;
 
@@ -127,12 +131,13 @@ public class UOLDriver {
 
 	private void configureURLs(){
 		
-		rootUrl 	 = getURL("rootPath");
-		homeUrl 	 = getURL("homePath");
-		historicoUrl = getURL("historicoPath");
-		extratoUrl   = getURL("extratoPath");
-		enderecoUrl  = getURL("enderecoPath");
-		log.log(Level.INFO, "URL Endereco: " + enderecoUrl);
+		rootUrl 	 	= getURL("rootPath");
+		homeUrl 	 	= getURL("homePath");
+		historicoUrl 	= getURL("historicoPath");
+		extratoUrl   	= getURL("extratoPath");
+		enderecoUrl     = getURL("enderecoPath");
+		alterarSenhaUrl = getURL("alterarSenhaPath");
+
 	}
 
 	public void init() throws IOException {
@@ -141,7 +146,6 @@ public class UOLDriver {
 		randomizer = new Random();
 		String matricula = matriculas[randomizer.nextInt(matriculas.length)];
 
-//		String response = http.fetchURL(rootUrl).toString();
 		log.log(Level.INFO, "Matricula: " + matricula);
 		doLogin(matricula);
 	}
@@ -168,27 +172,28 @@ public class UOLDriver {
 	}
 
 	@BenchmarkOperation(name = "Home", 
-						max90th = 250, // 250 millisec
+						max90th = 300, // 250 millisec
 						timing = Timing.AUTO)
 	public void doHomePage() throws IOException {
 		int size = http.readURL(homeUrl);
+		log.log(Level.INFO, "[Home] Home visitada");
 		if (ctx.isTxSteadyState())
 			contentStats.sumContentSize[ctx.getOperationId()] += size;
 	}
 
 	@BenchmarkOperation(name = "Historico", 
-						max90th = 150, // millisec
+						max90th = 300, // millisec
 						timing = Timing.AUTO)
 	public void doHistoricoPage() throws IOException {
 		
 		StringBuilder response = http.fetchURL(historicoUrl);
-				
+		log.log(Level.INFO, "[Historico] Historico consultado");		
 		if (ctx.isTxSteadyState())
 			contentStats.sumContentSize[ctx.getOperationId()] += response.length();
 	}
 
 	@BenchmarkOperation(name = "Extrato", 
-						max90th = 250, // 250 millisec
+						max90th = 400, // 250 millisec
 						timing = Timing.AUTO)
 	public void doExtratoPage() throws IOException {
 		int size = http.readURL(extratoUrl);
@@ -197,26 +202,9 @@ public class UOLDriver {
 	}
 
 	private String constructEnderecoPost() {
-//        StringBuilder postString = new StringBuilder();
-//        
-//        postString.append("tipo=").append("R");
-//        postString.append("&rua=").append("Av.+Washington+Soares");
-//        postString.append("&endereco=").append("1321");
-//        postString.append("&ponto=").append("TESTE+PROJETO+CUMULUS");
-//        postString.append("&bairro=").append("Edson+Queiroz");
-//        postString.append("&cidade=").append("Fortaleza");
-//        postString.append("&uf=").append("CE");
-//        postString.append("&cep=").append("60135420");
-//        postString.append("&dddcelular=").append("85");
-//        postString.append("&telefonecelular=").append("12345678");
-//        
-//        return postString.toString();
-		
-//		return "tipo=R&rua=Av.+Washington+Soares%2C+1321&endereco=1321&complemento=APTO.+611+BL-B&ponto=CUMULUS&bairro=Edson+Queiroz&cidade=FORTALEZA&uf=CE&cep=60841455&dddcelular=85&telefonecelular=96420397&ddd=85&telefone=32551610&dddcomercial=&telefonecomercial=&dddemergencia=&telefoneemergencia=&contatoemergencia=&dddfax=&telefonefax=&emailunifor=jglauberfaengamb%40edu.unifor.br&email=";
 		return "tipo=R&rua=Av. Washington Soares, 1321&endereco=1321&complemento=APTO. 611 BL-B&ponto=CUMULUS&bairro=Edson Queiroz&cidade=FORTALEZA&uf=CE&cep=60841455&dddcelular=85&telefonecelular=96420397&ddd=85&telefone=32551610&dddcomercial=&telefonecomercial=&dddemergencia=&telefoneemergencia=&contatoemergencia=&dddfax=&telefonefax=&emailunifor=jglauberfaengamb@edu.unifor.br&email=";
     }
 	
-
 	@BenchmarkOperation(name = "Endereco", 
 						max90th = 1000, // millisec
 						timing = Timing.AUTO)
@@ -243,6 +231,43 @@ public class UOLDriver {
 			}
 		}
 		
+		if (ctx.isTxSteadyState())
+			contentStats.sumContentSize[ctx.getOperationId()] += response
+					.length();
+	}
+
+	private String constructAlterarSenhaPost() {
+		return "senhaAtual=11111111&senhaNova=22222222&senhaRepetir=22222222";
+	}
+
+	@BenchmarkOperation(name = "AlterarSenha", 
+						max90th = 200, // millisec
+						timing = Timing.AUTO)
+	public void doAlterarSenhaPage() throws IOException {
+
+		StringBuilder response = http.fetchURL(alterarSenhaUrl);
+
+		if (ctx.isTxSteadyState())
+			contentStats.sumContentSize[ctx.getOperationId()] += response
+					.length();
+
+		int responseCode = http.getResponseCode();
+
+		if (responseCode == 200) {
+
+			String alterarSenhaPost = constructAlterarSenhaPost();
+			String alterarSenhaAction = url
+					+ "/oul/AcessoSenhaSubmit.do?method=senhaSubmit";
+			response = http.fetchURL(alterarSenhaAction, alterarSenhaPost);
+
+			responseCode = http.getResponseCode();
+			log.log(Level.INFO, "[AlterarSenha] Codigo de resposta alteracao: "
+					+ responseCode);
+			if (responseCode == 200) {
+				log.log(Level.INFO, "Senha alterada com sucesso!");
+			}
+		}
+
 		if (ctx.isTxSteadyState())
 			contentStats.sumContentSize[ctx.getOperationId()] += response
 					.length();

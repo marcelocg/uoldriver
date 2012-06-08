@@ -44,6 +44,10 @@
                     <value>/oul/Endereco.do?method=popular</value>
                 </property>
                 <property>
+                    <name>alterarSenhaPath</name>
+                    <value>/oul/Acesso.do?method=parse&amp;objetoCodigo=23299</value>
+                </property>
+                <property>
                     <name>extratoPath</name>
                     <value>/oul/Acesso.do?objetoCodigo=23315</value>
                 </property>
