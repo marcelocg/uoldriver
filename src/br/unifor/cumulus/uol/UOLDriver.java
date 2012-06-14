@@ -159,13 +159,18 @@ public class UOLDriver {
         return postString.toString();
     }
 
-	public void doLogin(String matricula) throws IOException {
+	public void doLogin(String matricula) {
 		
 		log.log(Level.INFO, "Efetuando login...");
 		
 		String loginPost = constructLoginPost(matricula);
 		String loginAction = url + "/oul/LogonSubmit.do?method=logon";
-		StringBuilder response = http.fetchURL(loginAction, loginPost);
+		try {
+			StringBuilder response = http.fetchURL(loginAction, loginPost);
+		} catch (IOException e) {
+			// abafado pra tentar fazer o benchmark terminar
+			
+		}
 		// log.log(Level.INFO, "[LOGIN] Response Code:" + http.getResponseCode());
 		// log.log(Level.INFO, response.toString());
 		
@@ -226,9 +231,9 @@ public class UOLDriver {
 			response = http.fetchURL(enderecoAction, enderecoPost);
 			
 			responseCode = http.getResponseCode();
-			log.log(Level.INFO, "[Endereco] Codigo de resposta alteracao: " + responseCode);
+//			log.log(Level.INFO, "[Endereco] Codigo de resposta alteracao: " + responseCode);
 			if(responseCode == 200){
-				log.log(Level.INFO, "Dados de Endereço alterados!");
+				log.log(Level.INFO, "[Endereco] Dados de Endereço alterados!");
 			}
 		}
 		

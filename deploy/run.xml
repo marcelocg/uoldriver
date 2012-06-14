@@ -11,18 +11,18 @@
         <fh:description>Write the run description here.</fh:description>
         <!-- The hostConfig section is used by the harness to control hosts -->
         <fa:hostConfig>
-            <fa:host>10.252.11.245</fa:host>
+            <fa:host>10.252.79.5</fa:host>
             <fh:tools></fh:tools>
         </fa:hostConfig>
         <!-- The scale of the benchmark run, the driver definition
         defines the number of threads for each driver scale
         and each driver type. -->
-        <fa:scale>3</fa:scale>
+        <fa:scale>10</fa:scale>
         <!-- The rampup, steadystate, and rampdown of the driver -->
         <fa:runControl unit="time">
-            <fa:rampUp>30</fa:rampUp>
-            <fa:steadyState>60</fa:steadyState>
-            <fa:rampDown>10</fa:rampDown>
+            <fa:rampUp>60</fa:rampUp>
+            <fa:steadyState>120</fa:steadyState>
+            <fa:rampDown>30</fa:rampDown>
         </fa:runControl>
         <!-- The driver-specific config.  -->
         <driverConfig name="UOLDriver">
@@ -60,7 +60,7 @@
     </fa:runConfig>
     <webServer>
         <fa:hostConfig xmlns="http://faban.sunsource.net/ns/fabanharness" xmlns:fa="http://faban.sunsource.net/ns/faban">
-            <fa:hostPorts>ec2-23-22-96-129.compute-1.amazonaws.com:8080</fa:hostPorts>
+            <fa:hostPorts>ec2-23-22-105-86.compute-1.amazonaws.com:8080</fa:hostPorts>
             <enabled>false</enabled>
             <tools>NONE</tools>
         </fa:hostConfig>
