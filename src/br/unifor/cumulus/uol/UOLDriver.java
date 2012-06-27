@@ -24,19 +24,29 @@
  */
 package br.unifor.cumulus.uol;
 
-import com.sun.faban.common.NameValuePair;
-import com.sun.faban.common.Utilities;
-import com.sun.faban.driver.*;
-import com.sun.faban.driver.util.ContentSizeStats;
-
-import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
-import java.net.ResponseCache;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.xml.xpath.XPathExpressionException;
+
+import com.sun.faban.common.NameValuePair;
+import com.sun.faban.common.Utilities;
+import com.sun.faban.driver.BenchmarkDefinition;
+import com.sun.faban.driver.BenchmarkDriver;
+import com.sun.faban.driver.BenchmarkOperation;
+import com.sun.faban.driver.ConfigurationException;
+import com.sun.faban.driver.CycleType;
+import com.sun.faban.driver.DriverContext;
+import com.sun.faban.driver.FixedTime;
+import com.sun.faban.driver.HttpTransport;
+import com.sun.faban.driver.MatrixMix;
+import com.sun.faban.driver.Row;
+import com.sun.faban.driver.Timing;
+import com.sun.faban.driver.util.ContentSizeStats;
 
 @BenchmarkDefinition(name = "UOL Workload", 
 					 version = "0.1", 
@@ -52,17 +62,17 @@ import java.util.logging.Logger;
 			cycleTime = 2000, 
 			cycleDeviation = 20
 )
-//@MatrixMix(operations = { "Home", "Historico", "Extrato" }, 
-//		   mix = { @Row({ 	0, 		80, 		20 }), //Home 
-//				   @Row({ 	20, 	39, 		41 }), //Historico
-//				   @Row({ 	60, 	19, 		21 }) }//Extrato
+//@MatrixMix(operations = { "Home", "Historico", "Endereco", "Extrato", "AlterarSenha"  }, 
+//mix = { @Row({ 	0, 40, 15, 40,  5  }),
+//		@Row({ 15,  0, 20, 60,  5  }),
+//		@Row({ 10, 30,  0, 55,  5  }),
+//		@Row({ 30, 35, 30,  0,  5  }),
+//		@Row({ 40, 30, 10, 20,  0  }) }
 //)
-@MatrixMix(operations = { "Home", "Historico", "Endereco", "Extrato", "AlterarSenha"  }, 
-mix = { @Row({ 	0, 40, 15, 40,  5  }),
-		@Row({ 15,  0, 20, 60,  5  }),
-		@Row({ 10, 30,  0, 55,  5  }),
-		@Row({ 30, 35, 30,  0,  5  }),
-		@Row({ 40, 30, 10, 20,  0  }) }
+@MatrixMix(operations = { "Historico", "Extrato", "AlterarSenha"  }, 
+mix = { @Row({ 	0, 75, 25  }),
+		@Row({ 75,  0, 25  }),
+		@Row({ 50, 50,  0  }) }
 )
 public class UOLDriver {
 
@@ -101,6 +111,8 @@ public class UOLDriver {
 			urlBuilder.append("http://");
 
 		s = ctx.getXPathValue("/UOL/webServer/fa:hostConfig/fa:hostPorts");
+		log.log(Level.INFO, "HostPorts antes do parse: " + s);
+		
 		List<NameValuePair<Integer>> hostPorts = Utilities.parseHostPorts(s);
 		// We currently only support a single host/port with this workload
 		if (hostPorts.size() != 1)
@@ -110,15 +122,20 @@ public class UOLDriver {
 					"Only single host:port currently supported.");
 		}
 		NameValuePair<Integer> hostPort = hostPorts.get(0);
-		urlBuilder.append(hostPort.name);
+		urlBuilder.append(hostPort.name + "/balance/");
 		if (hostPort.value != null)
 			urlBuilder.append(':').append(hostPort.value);
 
 		url = urlBuilder.toString();
+		log.log(Level.INFO, "[SETUP] URL Balanceador:\n" + url);
+		http.fetchURL(url).toString();
+		
+		String headers = http.dumpResponseHeaders();
+		
+		url = headers.substring(headers.indexOf("http://"), headers.indexOf(":8080") + 5);
+		
+		log.log(Level.INFO, "[SETUP] URL Servidor:\n" + url);
 
-//		String response = http.fetchURL(url).toString();
-//
-//		url = response.substring(response.indexOf("<frame name=\"main\" src=\"") + 24, response.indexOf("<noframes>") - 9);
 //		url = url.substring(0, url.indexOf("/oul/inicio.jsp"));
 
 		
@@ -177,7 +194,7 @@ public class UOLDriver {
 	}
 
 	@BenchmarkOperation(name = "Home", 
-						max90th = 300, // 250 millisec
+						max90th = 5000, // 250 millisec
 						timing = Timing.AUTO)
 	public void doHomePage() throws IOException {
 		int size = http.readURL(homeUrl);
@@ -187,7 +204,7 @@ public class UOLDriver {
 	}
 
 	@BenchmarkOperation(name = "Historico", 
-						max90th = 300, // millisec
+						max90th = 5000, // millisec
 						timing = Timing.AUTO)
 	public void doHistoricoPage() throws IOException {
 		
@@ -198,7 +215,7 @@ public class UOLDriver {
 	}
 
 	@BenchmarkOperation(name = "Extrato", 
-						max90th = 400, // 250 millisec
+						max90th = 5000, // 250 millisec
 						timing = Timing.AUTO)
 	public void doExtratoPage() throws IOException {
 		StringBuilder response = http.fetchURL(extratoUrl);
@@ -212,7 +229,7 @@ public class UOLDriver {
     }
 	
 	@BenchmarkOperation(name = "Endereco", 
-						max90th = 1000, // millisec
+						max90th = 5000, // millisec
 						timing = Timing.AUTO)
 	public void doEnderecoPage() throws IOException {
 
@@ -247,7 +264,7 @@ public class UOLDriver {
 	}
 
 	@BenchmarkOperation(name = "AlterarSenha", 
-						max90th = 200, // millisec
+						max90th = 5000, // millisec
 						timing = Timing.AUTO)
 	public void doAlterarSenhaPage() throws IOException {
 
